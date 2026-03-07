@@ -7,6 +7,7 @@ from app.schemas.live_session import (
     LiveChunkUploadResponseSchema,
     LiveSessionCreateResponseSchema,
     LiveSessionSummarySchema,
+    LiveSessionStatusSchema,
 )
 from app.services.live_sessions import (
     accept_live_chunk,
@@ -97,3 +98,22 @@ def end_live_session_endpoint(live_id: int, db: Session = Depends(get_db)):
         return to_live_session_summary_schema(session)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get(
+    "/{live_id}/status",
+    response_model=LiveSessionStatusSchema,
+)
+def get_live_session_status_endpoint(
+    live_id: int,
+    db: Session = Depends(get_db),
+):
+    session = get_live_session_by_id(db, live_id)
+
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Live session not found",
+        )
+
+    return session

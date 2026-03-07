@@ -13,7 +13,7 @@ class Recording(Base):
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     saved_path: Mapped[str] = mapped_column(String(500), nullable=False)
     device_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="processing")
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="uploaded")
 
     overall_label: Mapped[str | None] = mapped_column(String(100), nullable=True)
     overall_is_leopard: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

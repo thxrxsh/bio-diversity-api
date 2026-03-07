@@ -29,3 +29,9 @@ class ProcessingStatus(str, Enum):
     processing = "processing"
     completed = "completed"
     failed = "failed"
+
+class RecordingStatus(str, Enum):
+    uploaded = "uploaded"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"

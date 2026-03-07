@@ -6,6 +6,7 @@ from app.schemas.recording import (
     RecordingChunkSchema,
     RecordingCreateResponseSchema,
     RecordingSummarySchema,
+    RecordingStatusSchema,
 )
 from app.services.recordings import get_recording_by_id, get_recording_chunks, process_recording
 from app.services.serializers import to_recording_chunk_schema, to_recording_summary_schema
@@ -53,3 +54,22 @@ def get_recording_chunks_endpoint(recording_id: int, db: Session = Depends(get_d
 
     chunks = get_recording_chunks(db, recording_id)
     return [to_recording_chunk_schema(chunk) for chunk in chunks]
+
+
+@router.get(
+    "/{recording_id}/status",
+    response_model=RecordingStatusSchema,
+)
+def get_recording_status_endpoint(
+    recording_id: int,
+    db: Session = Depends(get_db),
+):
+    recording = get_recording_by_id(db, recording_id)
+
+    if recording is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recording not found",
+        )
+
+    return recording

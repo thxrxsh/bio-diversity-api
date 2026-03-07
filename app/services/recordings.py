@@ -12,6 +12,7 @@ from app.core.config import RECORDINGS_UPLOAD_DIR
 from app.models.recording import Recording
 from app.models.recording_chunk import RecordingChunk
 from app.services.audio_windowing import split_audio_into_windows
+from app.schemas.common import RecordingStatus
 
 
 class PredictorProtocol(Protocol):
@@ -81,7 +82,7 @@ def create_recording(
         file_name=file_name,
         saved_path=saved_path,
         device_id=device_id,
-        status="processing",
+        status=RecordingStatus.uploaded,
     )
     db.add(recording)
     db.commit()
@@ -91,7 +92,7 @@ def create_recording(
 
 def compute_recording_summary(recording: Recording, chunks: list[RecordingChunk]) -> None:
     if not chunks:
-        recording.status = "failed"
+        recording.status = RecordingStatus.failed
         recording.overall_label = None
         recording.overall_is_leopard = False
         recording.best_confidence = None
@@ -110,7 +111,7 @@ def compute_recording_summary(recording: Recording, chunks: list[RecordingChunk]
     recording.overall_is_leopard = bool(leopard_chunks)
     recording.best_confidence = best_chunk.confidence
     recording.best_chunk_id = best_chunk.id
-    recording.status = "completed"
+    recording.status = RecordingStatus.completed
 
 
 def process_recording(
@@ -134,6 +135,10 @@ def process_recording(
     created_chunks: list[RecordingChunk] = []
 
     try:
+        recording.status = RecordingStatus.processing
+        db.commit()
+        db.refresh(recording)
+
         windows = split_audio_into_windows(
             audio_path=saved_path,
             window_sec=window_sec,
@@ -142,7 +147,7 @@ def process_recording(
         )
 
         if not windows:
-            recording.status = "failed"
+            recording.status = RecordingStatus.failed
             db.commit()
             db.refresh(recording)
             return RecordingProcessResult(recording=recording, chunks=[])
@@ -169,6 +174,7 @@ def process_recording(
 
         db.refresh(recording)
         compute_recording_summary(recording, created_chunks)
+
         db.add(recording)
         db.commit()
         db.refresh(recording)
@@ -176,7 +182,7 @@ def process_recording(
         return RecordingProcessResult(recording=recording, chunks=created_chunks)
 
     except Exception:
-        recording.status = "failed"
+        recording.status = RecordingStatus.failed
         db.commit()
         db.refresh(recording)
         raise

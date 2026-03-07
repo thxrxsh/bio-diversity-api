@@ -3,7 +3,7 @@ from app.models.live_session import LiveSession
 from app.models.recording import Recording
 from app.models.recording_chunk import RecordingChunk
 from app.schemas.common import DistanceSchema, LocationSchema, ProbabilitySchema
-from app.schemas.live_session import LiveChunkSchema, LiveSessionSummarySchema
+from app.schemas.live_session import LiveChunkSchema, LiveSessionStatusSchema
 from app.schemas.recording import RecordingChunkSchema, RecordingSummarySchema
 
 
@@ -46,8 +46,8 @@ def to_recording_chunk_schema(chunk: RecordingChunk) -> RecordingChunkSchema:
     )
 
 
-def to_live_session_summary_schema(session: LiveSession) -> LiveSessionSummarySchema:
-    return LiveSessionSummarySchema(
+def to_live_session_summary_schema(session: LiveSession) -> LiveSessionStatusSchema:
+    return LiveSessionStatusSchema(
         id=session.id,
         device_id=session.device_id,
         status=session.status,

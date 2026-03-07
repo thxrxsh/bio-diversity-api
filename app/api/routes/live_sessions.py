@@ -6,7 +6,7 @@ from app.schemas.live_session import (
     LiveChunkSchema,
     LiveChunkUploadResponseSchema,
     LiveSessionCreateResponseSchema,
-    LiveSessionSummarySchema,
+    LiveSessionStatusSchema,
 )
 from app.services.live_sessions import (
     accept_live_chunk,
@@ -71,7 +71,7 @@ def upload_live_chunk_endpoint(
         ) from exc
 
 
-@router.get("/{live_id}", response_model=LiveSessionSummarySchema)
+@router.get("/{live_id}", response_model=LiveSessionStatusSchema)
 def get_live_session_endpoint(live_id: int, db: Session = Depends(get_db)):
     session = get_live_session_by_id(db, live_id)
     if session is None:
@@ -90,7 +90,7 @@ def get_live_chunks_endpoint(live_id: int, db: Session = Depends(get_db)):
     return [to_live_chunk_schema(chunk) for chunk in chunks]
 
 
-@router.post("/{live_id}/end", response_model=LiveSessionSummarySchema)
+@router.post("/{live_id}/end", response_model=LiveSessionStatusSchema)
 def end_live_session_endpoint(live_id: int, db: Session = Depends(get_db)):
     try:
         session = end_live_session(db, live_id)

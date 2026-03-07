@@ -12,7 +12,7 @@ class LiveSessionCreateResponseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class LiveSessionSummarySchema(BaseModel):
+class LiveSessionStatusSchema(BaseModel):
     id: int
     device_id: str | None = None
     status: LiveSessionStatus
@@ -36,7 +36,7 @@ class LiveChunkSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class LiveSessionSummarySchema(BaseModel):
+class LiveSessionStatusSchema(BaseModel):
     id: int
     device_id: str | None = None
     status: str
@@ -55,5 +55,5 @@ class LiveSessionSummarySchema(BaseModel):
 
 
 class LiveChunkUploadResponseSchema(BaseModel):
-    session: LiveSessionSummarySchema
+    session: LiveSessionStatusSchema
     chunk: LiveChunkSchema

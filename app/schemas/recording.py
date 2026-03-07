@@ -2,12 +2,19 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.schemas.common import DistanceSchema, ProbabilitySchema
+from app.schemas.common import DistanceSchema, ProbabilitySchema, RecordingStatus
 
 
 class RecordingCreateResponseSchema(BaseModel):
     id: int
     status: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecordingStatusSchema(BaseModel):
+    id: int
+    status: RecordingStatus
 
     model_config = ConfigDict(from_attributes=True)
 

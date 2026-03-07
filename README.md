@@ -324,4 +324,4 @@ Possible enhancements:
 
 # License
 
-This project is for research and development purposes.
+Private Project - All Rights Received

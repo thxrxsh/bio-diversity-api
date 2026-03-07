@@ -51,12 +51,15 @@ def to_live_session_summary_schema(session: LiveSession) -> LiveSessionSummarySc
         id=session.id,
         device_id=session.device_id,
         status=session.status,
+        processing_status=session.processing_status,
         overall_is_leopard=session.overall_is_leopard,
         best_confidence=session.best_confidence,
         last_location=LocationSchema(
             latitude=session.last_latitude,
             longitude=session.last_longitude,
-        ),
+        )
+        if session.last_latitude is not None and session.last_longitude is not None
+        else None,
         started_at=session.started_at,
         ended_at=session.ended_at,
         last_detected_at=session.last_detected_at,

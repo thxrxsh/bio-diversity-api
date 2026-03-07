@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from enum import Enum
 
 
 class ProbabilitySchema(BaseModel):
@@ -16,3 +17,15 @@ class DistanceSchema(BaseModel):
 class LocationSchema(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
+
+
+class LiveSessionStatus(str, Enum):
+    active = "active"
+    ended = "ended"
+
+
+class ProcessingStatus(str, Enum):
+    idle = "idle"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"

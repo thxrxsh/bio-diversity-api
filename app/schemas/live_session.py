@@ -3,13 +3,20 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.common import DistanceSchema, LocationSchema, ProbabilitySchema
-
+from app.schemas.common import LiveSessionStatus, ProcessingStatus
 
 class LiveSessionCreateResponseSchema(BaseModel):
     id: int
     status: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class LiveSessionSummarySchema(BaseModel):
+    id: int
+    device_id: str | None = None
+    status: LiveSessionStatus
+    processing_status: ProcessingStatus
 
 
 class LiveChunkSchema(BaseModel):
@@ -33,6 +40,7 @@ class LiveSessionSummarySchema(BaseModel):
     id: int
     device_id: str | None = None
     status: str
+    processing_status: str
 
     overall_is_leopard: bool
     best_confidence: float | None = None

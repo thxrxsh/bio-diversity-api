@@ -48,7 +48,11 @@ def _extract_prediction_fields(prediction: dict[str, Any]) -> dict[str, Any]:
 
 
 def create_live_session(db: Session, device_id: str | None = None) -> LiveSession:
-    session = LiveSession(device_id=device_id, status="active")
+    session = LiveSession(
+        device_id=device_id,
+        status="active",
+        processing_status="idle",
+    )
     db.add(session)
     db.commit()
     db.refresh(session)
@@ -103,31 +107,43 @@ def accept_live_chunk(
     if chunk_index is None:
         chunk_index = _get_next_chunk_index(db, live_session_id)
 
-    prediction = predictor.predict(audio_bytes)
-    fields = _extract_prediction_fields(prediction)
-
-    chunk = LiveChunk(
-        live_session_id=live_session_id,
-        chunk_index=chunk_index,
-        latitude=latitude,
-        longitude=longitude,
-        **fields,
-    )
-
-    db.add(chunk)
+    session.processing_status = "processing"
     db.flush()
-    db.refresh(chunk)
 
-    update_live_session_summary(session, chunk)
+    try:
+        prediction = predictor.predict(audio_bytes)
+        fields = _extract_prediction_fields(prediction)
 
-    if chunk.is_leopard:
-        create_or_update_alert_for_live_session(db, session)
+        chunk = LiveChunk(
+            live_session_id=live_session_id,
+            chunk_index=chunk_index,
+            latitude=latitude,
+            longitude=longitude,
+            **fields,
+        )
 
-    db.commit()
-    db.refresh(chunk)
-    db.refresh(session)
+        db.add(chunk)
+        db.flush()
+        db.refresh(chunk)
 
-    return LiveChunkProcessResult(session=session, chunk=chunk)
+        update_live_session_summary(session, chunk)
+
+        if chunk.is_leopard:
+            create_or_update_alert_for_live_session(db, session)
+
+        session.processing_status = "completed"
+
+        db.commit()
+        db.refresh(chunk)
+        db.refresh(session)
+
+        return LiveChunkProcessResult(session=session, chunk=chunk)
+
+    except Exception:
+        session.processing_status = "failed"
+        db.commit()
+        db.refresh(session)
+        raise
 
 
 def end_live_session(db: Session, live_session_id: int) -> LiveSession:

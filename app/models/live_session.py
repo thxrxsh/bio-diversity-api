@@ -11,7 +11,13 @@ class LiveSession(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     device_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
+    processing_status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="idle",
+    )
 
     overall_is_leopard: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     best_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)

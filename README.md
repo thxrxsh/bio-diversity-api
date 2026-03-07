@@ -216,14 +216,22 @@ with probability outputs.
 Clone the repository.
 
 ```
-git clone https://github.com/yourusername/bio-diversity-api.git
+git clone https://github.com/thxrxsh/bio-diversity-api.git
 cd bio-diversity-api
 ```
+
+Ensure Python 3.12.7 is available via pyenv.
+
+```
+pyenv install 3.12.7   # skip if already installed
+pyenv local 3.12.7
+```
+
 
 Create a virtual environment.
 
 ```
-python -m venv venv
+~/.pyenv/versions/3.12.7/bin/python -m venv venv
 source venv/bin/activate
 ```
 

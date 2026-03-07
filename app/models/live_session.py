@@ -22,6 +22,11 @@ class LiveSession(Base):
     overall_is_leopard: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     best_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    distance_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    distance_min_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    distance_max_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    distance_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+
     last_latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     last_longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
 

@@ -100,18 +100,96 @@ def compute_recording_summary(recording: Recording, chunks: list[RecordingChunk]
         recording.best_chunk_id = None
         return
 
-    leopard_chunks = [chunk for chunk in chunks if chunk.is_leopard]
-    summary_pool = leopard_chunks or chunks
+    def conf(chunk: RecordingChunk) -> float:
+        return float(chunk.confidence) if chunk.confidence is not None else 0.0
 
-    best_chunk = max(
-        summary_pool,
-        key=lambda chunk: chunk.confidence if chunk.confidence is not None else -1.0,
+    def p_leopard(chunk: RecordingChunk) -> float:
+        return float(chunk.leopard_probability) if chunk.leopard_probability is not None else 0.0
+
+    def p_non_leopard(chunk: RecordingChunk) -> float:
+        return float(chunk.non_leopard_probability) if chunk.non_leopard_probability is not None else 0.0
+
+    def avg_conf(chunk_list: list[RecordingChunk]) -> float | None:
+        if not chunk_list:
+            return None
+        return sum(conf(chunk) for chunk in chunk_list) / len(chunk_list)
+
+    num_chunks = len(chunks)
+
+    # ---------- 1 WINDOW ----------
+    if num_chunks == 1:
+        only_chunk = chunks[0]
+
+        recording.overall_label = only_chunk.label
+        recording.overall_is_leopard = only_chunk.label == "leopard"
+        recording.best_confidence = conf(only_chunk)
+        recording.best_chunk_id = only_chunk.id
+        recording.status = RecordingStatus.completed
+        return
+
+    # ---------- 2 WINDOWS ----------
+    if num_chunks == 2:
+        c1, c2 = chunks[0], chunks[1]
+
+        # Same prediction from both windows
+        if c1.label == c2.label:
+            agreed_label = c1.label
+            agreed_confidence = avg_conf([c1, c2])
+
+            best_chunk = max([c1, c2], key=conf)
+
+            recording.overall_label = agreed_label
+            recording.overall_is_leopard = agreed_label == "leopard"
+            recording.best_confidence = agreed_confidence
+            recording.best_chunk_id = best_chunk.id
+            recording.status = RecordingStatus.completed
+            return
+
+        # Mixed prediction: one leopard, one non_leopard
+        leopard_chunk = next((c for c in chunks if c.label == "leopard"), None)
+        non_leopard_chunk = next((c for c in chunks if c.label == "non_leopard"), None)
+
+        if leopard_chunk is not None and p_leopard(leopard_chunk) > 0.7:
+            recording.overall_label = "leopard"
+            recording.overall_is_leopard = True
+            recording.best_confidence = conf(leopard_chunk)
+            recording.best_chunk_id = leopard_chunk.id
+        else:
+            # fallback to non_leopard side
+            chosen_chunk = non_leopard_chunk if non_leopard_chunk is not None else max(chunks, key=conf)
+            recording.overall_label = "non_leopard"
+            recording.overall_is_leopard = False
+            recording.best_confidence = conf(chosen_chunk)
+            recording.best_chunk_id = chosen_chunk.id
+
+        recording.status = RecordingStatus.completed
+        return
+
+    # ---------- 3 OR MORE WINDOWS ----------
+    valid_leopard_chunks = [chunk for chunk in chunks if p_leopard(chunk) > 0.6]
+    has_strong_leopard = any(p_leopard(chunk) > 0.7 for chunk in valid_leopard_chunks)
+
+    if len(valid_leopard_chunks) >= 2 and has_strong_leopard:
+        best_leopard_chunk = max(valid_leopard_chunks, key=p_leopard)
+
+        recording.overall_label = "leopard"
+        recording.overall_is_leopard = True
+        recording.best_confidence = avg_conf(valid_leopard_chunks)
+        recording.best_chunk_id = best_leopard_chunk.id
+        recording.status = RecordingStatus.completed
+        return
+
+    # Otherwise non_leopard
+    non_leopard_chunks = [chunk for chunk in chunks if chunk.label == "non_leopard"]
+    best_non_leopard_chunk = max(
+        non_leopard_chunks or chunks,
+        key=lambda chunk: p_non_leopard(chunk),
     )
 
-    recording.overall_label = best_chunk.label
-    recording.overall_is_leopard = bool(leopard_chunks)
-    recording.best_confidence = best_chunk.confidence
-    recording.best_chunk_id = best_chunk.id
+    recording.overall_label = "non_leopard"
+    recording.overall_is_leopard = False
+    recording.best_confidence = avg_conf(non_leopard_chunks or chunks)
+    recording.best_chunk_id = best_non_leopard_chunk.id
     recording.status = RecordingStatus.completed
 
 

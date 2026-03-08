@@ -44,6 +44,7 @@ class LiveSessionSummarySchema(BaseModel):
 
     overall_is_leopard: bool
     best_confidence: float | None = None
+    distance: DistanceSchema | None = None
     last_location: LocationSchema
 
     started_at: datetime

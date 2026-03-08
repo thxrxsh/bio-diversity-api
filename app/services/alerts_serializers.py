@@ -6,6 +6,7 @@ from app.schemas.common import DistanceSchema, LocationSchema
 def to_alert_list_item_schema(alert: Alert) -> AlertListItemSchema:
     return AlertListItemSchema(
         alert_id=alert.alert_id,
+        mode=alert.mode,
         detected_at=alert.detected_at,
         status=alert.status,
         severity=alert.severity,
@@ -21,7 +22,9 @@ def to_alert_list_item_schema(alert: Alert) -> AlertListItemSchema:
 def to_alert_detail_schema(alert: Alert) -> AlertDetailSchema:
     return AlertDetailSchema(
         alert_id=alert.alert_id,
+        mode=alert.mode,
         live_session_id=alert.live_session_id,
+        recording_id=alert.recording_id,
         device_id=alert.device_id,
         status=alert.status,
         risk_score=alert.risk_score,

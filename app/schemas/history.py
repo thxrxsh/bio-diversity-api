@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.schemas.common import LocationSchema
+from app.schemas.common import LocationSchema, DistanceSchema
 
 
 class HistoryItemSchema(BaseModel):
@@ -15,3 +15,4 @@ class HistoryItemSchema(BaseModel):
     confidence: float | None = None
     created_at: datetime
     location: LocationSchema | None = None
+    distance: DistanceSchema | None = None

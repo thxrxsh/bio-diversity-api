@@ -4,9 +4,11 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+from app.models.live_chunk import LiveChunk
 from app.models.live_session import LiveSession
 from app.models.recording import Recording
-from app.schemas.common import LocationSchema
+from app.models.recording_chunk import RecordingChunk
+from app.schemas.common import DistanceSchema, LocationSchema
 from app.schemas.history import HistoryItemSchema
 
 
@@ -20,6 +22,28 @@ def _within_date_range(
     if date_to is not None and value > date_to:
         return False
     return True
+
+
+def _build_distance_schema(
+    estimated_m: float | None,
+    min_m: float | None,
+    max_m: float | None,
+    confidence: float | None,
+) -> DistanceSchema | None:
+    if (
+        estimated_m is None
+        and min_m is None
+        and max_m is None
+        and confidence is None
+    ):
+        return None
+
+    return DistanceSchema(
+        estimated_m=estimated_m,
+        min_m=min_m,
+        max_m=max_m,
+        confidence=confidence,
+    )
 
 
 def fetch_recordings_history(
@@ -46,6 +70,23 @@ def fetch_recordings_history(
         if not _within_date_range(recording.created_at, date_from, date_to):
             continue
 
+        best_chunk = None
+        if recording.best_chunk_id is not None:
+            best_chunk = (
+                db.query(RecordingChunk)
+                .filter(RecordingChunk.id == recording.best_chunk_id)
+                .first()
+            )
+
+        distance = None
+        if best_chunk is not None:
+            distance = _build_distance_schema(
+                estimated_m=best_chunk.distance_m,
+                min_m=best_chunk.distance_min_m,
+                max_m=best_chunk.distance_max_m,
+                confidence=best_chunk.distance_confidence,
+            )
+
         items.append(
             HistoryItemSchema(
                 source="recording",
@@ -55,6 +96,7 @@ def fetch_recordings_history(
                 label=recording.overall_label,
                 is_leopard=recording.overall_is_leopard,
                 confidence=recording.best_confidence,
+                distance=distance,
                 created_at=recording.created_at,
                 location=None,
             )
@@ -95,6 +137,23 @@ def fetch_live_sessions_history(
                 longitude=session.last_longitude,
             )
 
+        best_chunk = None
+        if session.best_chunk_id is not None:
+            best_chunk = (
+                db.query(LiveChunk)
+                .filter(LiveChunk.id == session.best_chunk_id)
+                .first()
+            )
+
+        distance = None
+        if best_chunk is not None:
+            distance = _build_distance_schema(
+                estimated_m=best_chunk.distance_m,
+                min_m=best_chunk.distance_min_m,
+                max_m=best_chunk.distance_max_m,
+                confidence=best_chunk.distance_confidence,
+            )
+
         items.append(
             HistoryItemSchema(
                 source="live",
@@ -104,6 +163,7 @@ def fetch_live_sessions_history(
                 label="leopard" if session.overall_is_leopard else "non_leopard",
                 is_leopard=session.overall_is_leopard,
                 confidence=session.best_confidence,
+                distance=distance,
                 created_at=created_at,
                 location=location,
             )

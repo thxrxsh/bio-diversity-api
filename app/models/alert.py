@@ -11,10 +11,21 @@ class Alert(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     alert_id: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
-    live_session_id: Mapped[int] = mapped_column(
+    
+    mode: Mapped[str] = mapped_column(String(20), nullable=False)  # "live" | "recorded"
+    
+    live_session_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("live_sessions.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+
+    recording_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("recordings.id", ondelete="CASCADE"),
+        nullable=True,
         unique=True,
         index=True,
     )

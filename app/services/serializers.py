@@ -54,6 +54,17 @@ def to_live_session_summary_schema(session: LiveSession) -> LiveSessionSummarySc
         processing_status=session.processing_status,
         overall_is_leopard=session.overall_is_leopard,
         best_confidence=session.best_confidence,
+        distance=DistanceSchema(
+            estimated_m=session.distance_m,
+            min_m=session.distance_min_m,
+            max_m=session.distance_max_m,
+            confidence=session.distance_confidence,
+        )
+        if session.distance_m is not None
+        or session.distance_min_m is not None
+        or session.distance_max_m is not None
+        or session.distance_confidence is not None
+        else None,
         last_location=LocationSchema(
             latitude=session.last_latitude,
             longitude=session.last_longitude,

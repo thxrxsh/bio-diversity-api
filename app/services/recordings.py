@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 from app.core.config import RECORDINGS_UPLOAD_DIR
 from app.models.recording import Recording
 from app.models.recording_chunk import RecordingChunk
-from app.services.audio_windowing import split_audio_into_windows
 from app.schemas.common import RecordingStatus
+from app.services.alerts import create_or_update_alert_for_recording
+from app.services.audio_windowing import split_audio_into_windows
 
 
 class PredictorProtocol(Protocol):
@@ -174,6 +175,9 @@ def process_recording(
 
         db.refresh(recording)
         compute_recording_summary(recording, created_chunks)
+
+        if recording.overall_is_leopard:
+            create_or_update_alert_for_recording(db, recording)
 
         db.add(recording)
         db.commit()

@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 from app.models.alert import Alert
 from app.models.live_chunk import LiveChunk
 from app.models.live_session import LiveSession
+from app.models.recording_chunk import RecordingChunk
+from app.models.recording import Recording
+
 
 
 def generate_alert_id(length: int = 6) -> str:
@@ -95,7 +98,9 @@ def create_or_update_alert_for_live_session(
     if alert is None:
         alert = Alert(
             alert_id=_generate_unique_alert_id(db),
+            mode="live",
             live_session_id=live_session.id,
+            recording_id=None,
             device_id=live_session.device_id,
             status="new",
             risk_score=risk_score,
@@ -111,8 +116,10 @@ def create_or_update_alert_for_live_session(
             detected_at=live_session.last_detected_at or best_chunk.created_at,
         )
         db.add(alert)
-        db.flush()
     else:
+        alert.mode = "live"
+        alert.live_session_id = live_session.id
+        alert.recording_id = None
         alert.device_id = live_session.device_id
         alert.risk_score = risk_score
         alert.severity = severity
@@ -129,6 +136,75 @@ def create_or_update_alert_for_live_session(
 
     return alert
 
+
+def create_or_update_alert_for_recording(
+    db: Session,
+    recording: Recording,
+) -> Alert | None:
+    if not recording.overall_is_leopard:
+        return None
+
+    if recording.best_chunk_id is None:
+        return None
+
+    best_chunk = (
+        db.query(RecordingChunk)
+        .filter(RecordingChunk.id == recording.best_chunk_id)
+        .first()
+    )
+    if best_chunk is None:
+        return None
+
+    risk_score = calculate_risk_score(
+        leopard_confidence=best_chunk.confidence,
+        distance_m=best_chunk.distance_m,
+        distance_confidence=best_chunk.distance_confidence,
+    )
+    severity = derive_severity(risk_score)
+    priority = derive_priority(risk_score)
+
+    alert = db.query(Alert).filter(Alert.recording_id == recording.id).first()
+
+    if alert is None:
+        alert = Alert(
+            alert_id=_generate_unique_alert_id(db),
+            mode="recorded",
+            live_session_id=None,
+            recording_id=recording.id,
+            device_id=recording.device_id,
+            status="new",
+            risk_score=risk_score,
+            severity=severity,
+            priority=priority,
+            confidence=best_chunk.confidence,
+            distance_m=best_chunk.distance_m,
+            distance_min_m=best_chunk.distance_min_m,
+            distance_max_m=best_chunk.distance_max_m,
+            distance_confidence=best_chunk.distance_confidence,
+            latitude=None,
+            longitude=None,
+            detected_at=recording.created_at,
+        )
+        db.add(alert)
+    else:
+        alert.mode = "recorded"
+        alert.live_session_id = None
+        alert.recording_id = recording.id
+        alert.device_id = recording.device_id
+        alert.risk_score = risk_score
+        alert.severity = severity
+        alert.priority = priority
+        alert.confidence = best_chunk.confidence
+        alert.distance_m = best_chunk.distance_m
+        alert.distance_min_m = best_chunk.distance_min_m
+        alert.distance_max_m = best_chunk.distance_max_m
+        alert.distance_confidence = best_chunk.distance_confidence
+        alert.latitude = None
+        alert.longitude = None
+        alert.detected_at = recording.created_at
+        alert.updated_at = datetime.utcnow()
+
+    return alert
 
 def get_alerts(
     db: Session,

@@ -7,6 +7,7 @@ from app.schemas.common import DistanceSchema, LocationSchema
 
 class AlertListItemSchema(BaseModel):
     alert_id: str
+    mode: str
     detected_at: datetime
     status: str
     severity: str
@@ -17,14 +18,14 @@ class AlertListItemSchema(BaseModel):
 
 class AlertDetailSchema(BaseModel):
     alert_id: str
-    live_session_id: int
+    mode: str
+    live_session_id: int | None = None
+    recording_id: int | None = None
     device_id: str | None = None
-
     status: str
     risk_score: int
     severity: str
     priority: str
-
     confidence: float | None = None
     distance: DistanceSchema
     detected_at: datetime

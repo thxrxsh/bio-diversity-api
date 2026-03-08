@@ -26,9 +26,15 @@ class LeopardPredictor:
         x = np.expand_dims(x, axis=0)
 
         probs = self.model.predict(x, verbose=0)[0]
+
         class_idx = int(np.argmax(probs))
-        confidence = float(probs[class_idx])
         label = CLASS_NAMES[class_idx]
+
+        # confidence = float(probs[class_idx])
+        p_leopard = float(probs[0])
+        p_non_leopard = float(probs[1])
+        confidence = abs(p_leopard - p_non_leopard)
+
 
         audio_wave = load_audio_bytes(audio_bytes)
         distance = estimate_distance(audio_wave)
